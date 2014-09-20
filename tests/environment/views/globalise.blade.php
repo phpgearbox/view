@@ -1,0 +1,1 @@
+This is the globalise test - {{ $global }}

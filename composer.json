@@ -1,0 +1,25 @@
+{
+	"name": "gears/view",
+	"description": "Laravel Sessions Standalone",
+	"homepage": "https://github.com/phpgearbox/view",
+	"keywords": ["laravel", "blade", "views", "standalone"],
+	"license": "MIT",
+	"autoload":
+	{
+		"psr-4":
+		{
+			"Gears\\": "src"
+		}
+	},
+	"require":
+	{
+		"illuminate/view": "4.*",
+		"illuminate/events": "4.*"
+	},
+	"require-dev":
+	{
+		"phpunit/phpunit": "4.*",
+		"codegyre/robo": "*",
+		"guzzlehttp/guzzle": "4.*"
+	}
+}
