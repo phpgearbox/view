@@ -15,7 +15,7 @@ How to Install
 --------------------------------------------------------------------------------
 Installation via composer is easy:
 
-	composer require gears/blade:*
+	composer require gears/view:*
 
 How to Use
 --------------------------------------------------------------------------------
@@ -26,8 +26,11 @@ You can use the Laravel Blade API like so:
 // Make sure you have composer included
 require('vendor/autoload.php');
 
-// Install the gears view component
-Gears\View::install('/path/to/my/views', '/path/to/cache');
+// Create a new View Instance
+$views = new Gears\View('/path/to/my/views');
+
+// Next you will probably want to make the view object global.
+$views->globalise();
 ```
 
 And thats it, now you can use code like the following:
@@ -54,28 +57,22 @@ http://laravel.com/docs/templates#blade-templating
 
 View Scope
 --------------------------------------------------------------------------------
-When you run ```Gears\View::install``` it checks to see if the class ```View```
+When you run ```$views->globalise();``` it checks to see if the class ```View```
 exists globally. If not it use the function ```class_alias``` to alias it's self
 in much the same a Laravel Application does.
 
-So if the class ```View``` does already exist globally.
-You will need to call ```Gears\View::make('index'); instead, for example.
+This enables us to use the ```View``` API we are familar with.
 
 View Include Path:
 --------------------------------------------------------------------------------
-Something that I just discovered, you can provide an array of paths like a
-so you can now have a View Include Path. Very handy for overriding views, etc.
+You can provide an array of paths, instead of just one path.
+So in effect you can have a View Include Path.
+Very handy for overriding views, etc.
 Here is an example:
 
 ```php
-Gears\View::install(['/views/specific', '/views/generic'], '/path/to/cache');
+$views = new Gears\View(['/views/specific', '/views/generic']);
 ```
-
-Sorry about the package name confusion:
---------------------------------------------------------------------------------
-The cluey coder might have noticed the composer package is called *gears/blade*
-while the php namespace is *Gears\View*. This probably isn't the best practice.
-It's just a remnant from when I first setup the project.
 
 So now for the why?
 --------------------------------------------------------------------------------
