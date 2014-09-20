@@ -1,5 +1,10 @@
 The Blade View Gear
 ================================================================================
+[![Build Status](https://travis-ci.org/phpgearbox/view.svg)](https://travis-ci.org/phpgearbox/view)
+[![Latest Stable Version](https://poser.pugx.org/gears/view/v/stable.svg)](https://packagist.org/packages/gears/view)
+[![Total Downloads](https://poser.pugx.org/gears/view/downloads.svg)](https://packagist.org/packages/gears/view)
+[![License](https://poser.pugx.org/gears/view/license.svg)](https://packagist.org/packages/gears/view)
+
 **Laravel Blade Views Standalone**
 
 Okay so by now hopefully you have heard of [Laravel](http://laravel.com/),
