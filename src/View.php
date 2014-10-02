@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 
+use Exception;
 use Gears\Di\Container;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
