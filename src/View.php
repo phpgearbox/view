@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 
+use Gears\Di\Container;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
 use Illuminate\View\Engines\PhpEngine;
@@ -20,16 +21,17 @@ use Illuminate\View\Engines\EngineResolver;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Events\Dispatcher;
 
-class View
+class View extends Container
 {
 	/**
 	 * Property: viewsPath
 	 * =========================================================================
 	 * This is where we store the location of our views.
 	 * This can either be a single path. Or an array of paths in effect
-	 * creating a views include path.
+	 * creating a views include path. This is injected as the first argument
+	 * to the constructor.
 	 */
-	private $viewsPath = null;
+	protected $viewsPath;
 
 	/**
 	 * Property: cachePath
@@ -37,65 +39,101 @@ class View
 	 * This is where we store the location of our views cache folder.
 	 * We default this to a tmp dir, for super quick setup.
 	 */
-	private $cachePath = '/tmp/gears-views-cache';
+	protected $injectCachePath;
+
+	protected $injectFilesystem;
+
+	protected $injectFileViewFinder;
+
+	protected $injectEngineResolver;
+
+	protected $injectPhpEngine;
+
+	protected $injectBladeEngine;
+
+	protected $injectDispatcher;
 
 	/**
-	 * Property: viewFactory
+	 * Property: factory
 	 * =========================================================================
-	 * This is where we store a copy of the actual Laravel View Factory.
+	 * This is where we store the final Laravel View Factory.
 	 */
-	private $viewFactory = null;
+	protected $injectFactory;
 
 	/**
 	 * Property: instance
 	 * =========================================================================
 	 * This is used as part of the globalise functionality.
 	 */
-	private static $instance = null;
+	private static $instance;
 
-	/**
-	 * Method: __construct
-	 * =========================================================================
-	 * To setup the Laravel Blade views, create a newt instance.
-	 * At minimum we just need a path to the location of your views.
-	 *
-	 * Example usage:
-	 *
-	 *     $views = new Gears\View('/path/to/my/view');
-	 *     echo $views->make('my-view');
-	 *
-	 * Parameters:
-	 * -------------------------------------------------------------------------
-	 * $views - A path to the views directory. Or an array of paths.
-	 *
-	 * $options - An array of other options to set. The keys of the array
-	 * reflect the names of the properties above.
-	 *
-	 * Returns:
-	 * -------------------------------------------------------------------------
-	 * void
-	 */
-	public function __construct($views, $options = array())
+	protected function setDefaults()
 	{
-		// Save our views path
-		if (is_array($views))
+		$this->cachePath = '/tmp/gears-views-cache';
+
+		$this->filesystem = function()
 		{
-			$this->viewsPath = $views;
+			return new Filesystem;
+		};
+
+		$this->dispatcher = function()
+		{
+			return new Dispatcher;
+		};
+
+		$this->fileViewFinder = function()
+		{
+			return new FileViewFinder($this->filesystem, $this->viewsPath);
+		};
+
+		$this->phpEngine = $this->protect(function()
+		{
+			return new PhpEngine;
+		});
+
+		$that = $this;
+		$this->bladeEngine = $this->protect(function() use ($that)
+		{
+			return new CompilerEngine
+			(
+				new BladeCompiler($that->filesystem, $that->cachePath),
+				$that->filesystem
+			);
+		});
+
+		$this->engineResolver = function()
+		{
+			$resolver = new EngineResolver;
+
+			$resolver->register('php', $this->phpEngine);
+
+			$resolver->register('blade', $this->bladeEngine);
+
+			return $resolver;
+		};
+
+		$this->factory = function()
+		{
+			return new Factory
+			(
+				$this->engineResolver,
+				$this->fileViewFinder,
+				$this->dispatcher
+			);
+		};
+	}
+
+	public function __construct($viewsPath, $config = [])
+	{
+		parent::__construct($config);
+
+		if (is_array($viewsPath))
+		{
+			$this->viewsPath = $viewsPath;
 		}
 		else
 		{
-			$this->viewsPath = [$views];
-		}
-
-		// Set the rest of our config
-		// Sensible defaults have been set in the properties above
-		// So if nothing gets set here, we can continue.
-		foreach ($options as $option_key => $option_value)
-		{
-			if (isset($this->{$option_key}))
-			{
-				$this->{$option_key} = $option_value;
-			}
+			$this->viewsPath = [$viewsPath];
 		}
 
 		// Make sure the cache folder exists
@@ -105,41 +143,15 @@ class View
 			if (!mkdir($this->cachePath, 0777, true))
 			{
 				// Bail out we couldn't create the folder
-				throw new \Exception('Blade Cache Folder could not be created!');
+				throw new Exception('Blade Cache Folder could not be created!');
 			}
 		}
 
 		// Make sure the cache folder is writeable
 		if (!is_writeable($this->cachePath))
 		{
-			throw new \Exception('Blade Cache Folder not writeable!');
+			throw new Exception('Blade Cache Folder not writeable!');
 		}
-
-		// This is used a few times, so lets create it now.
-		$files = new Filesystem;
-
-		// Create the view finder
-		$finder = new FileViewFinder($files, $this->viewsPath);
-
-		// Create the engine resolver
-		$resolver = new EngineResolver;
-
-		// Add the PhpEngine
-		$resolver->register('php', function() { return new PhpEngine; });
-
-		// Add the blade engine :)
-		$cachePath = $this->cachePath;
-		$resolver->register('blade', function() use ($files, $cachePath)
-		{
-			return new CompilerEngine
-			(
-				new BladeCompiler($files, $cachePath),
-				$files
-			);
-		});
-
-		// Create the view factory and save it
-		$this->viewFactory = new Factory($resolver, $finder, new Dispatcher);
 	}
 
 	/**
@@ -179,7 +191,7 @@ class View
 		if (class_exists($alias))
 		{
 			// Bail out, a class already exists with the same name.
-			throw new \Exception('Class already exists!');
+			throw new Exception('Class already exists!');
 		}
 
 		// Create the alias
@@ -206,7 +218,7 @@ class View
 	 */
 	public function __call($name, $args)
 	{
-		return call_user_func_array([$this->viewFactory, $name], $args);
+		return call_user_func_array([$this->factory, $name], $args);
 	}
 
 	/**
@@ -229,7 +241,7 @@ class View
 		// Check to see if we have been globalised
 		if (empty(self::$instance))
 		{
-			throw new \Exception('You need to run globalise first!');
+			throw new Exception('You need to run globalise first!');
 		}
 
 		// Run the method from the static instance

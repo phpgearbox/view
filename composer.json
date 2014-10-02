@@ -13,6 +13,7 @@
 	},
 	"require":
 	{
+		"gears/di": "*",
 		"illuminate/view": "4.*",
 		"illuminate/events": "4.*"
 	},
