@@ -65,9 +65,8 @@ This enables us to use the ```View``` API we are familar with.
 
 View Include Path:
 --------------------------------------------------------------------------------
-You can provide an array of paths, instead of just one path.
-So in effect you can have a View Include Path.
-Very handy for overriding views, etc.
+You can provide an array of paths, instead of just one path. So in effect you
+can have a View Include Path. Very handy for setting up a HMVC type system.
 Here is an example:
 
 ```php
